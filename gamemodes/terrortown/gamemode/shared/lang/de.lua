@@ -1340,3 +1340,12 @@ L.desc_event_kill_other_using = "{victim} ({vrole} / {vteam}) wurde von {attacke
 
 -- 2021-04-20
 L.none = "Keine Rolle"
+
+-- 2021-04-24
+L.karma_teamkill_tooltip = "Karma erhalten durch Töten eines Team-Mitglieds."
+L.karma_teamhurt_tooltip = "Karma erhalten durch Verursachen von Schaden an einem Team-Mitglied."
+L.karma_enemykill_tooltip = "Karma erhalten durch Töten eines Feindes."
+L.karma_enemyhurt_tooltip = "Karma erhalten durch Verursachen von Schaden an einem Feind."
+L.karma_cleanround_tooltip = "Karma erhalten durch eine einwandfreie Runde."
+L.karma_roundheal_tooltip = "Karma erhalten am Rundenende."
+L.karma_unknown_tooltip = "Unbekanntes Karma Ereignis."

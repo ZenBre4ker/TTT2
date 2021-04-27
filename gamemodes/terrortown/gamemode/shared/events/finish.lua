@@ -116,6 +116,11 @@ function EVENT:CalculateScore()
 	end
 end
 
+
+function EVENT:ShouldKarmaChangeSynchronize()
+	return true
+end
+
 function EVENT:Serialize()
 	return "The round has ended."
 end

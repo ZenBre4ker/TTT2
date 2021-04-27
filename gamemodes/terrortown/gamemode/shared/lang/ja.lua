@@ -1351,3 +1351,12 @@ L.desc_event_kill_other_using = "{victim}({vrole}/{vteam})は{attacker}({arole}/
 
 -- 2021-04-20
 --L.none = "No Role"
+
+-- 2021-04-24
+--L.karma_teamkill_tooltip = "Karma received by killing team member."
+--L.karma_teamhurt_tooltip = "Karma received by damaging team member."
+--L.karma_enemykill_tooltip = "Karma received by killing enemy."
+--L.karma_enemyhurt_tooltip = "Karma received by damaging enemy."
+--L.karma_cleanround_tooltip = "Karma received for clean round."
+--L.karma_roundheal_tooltip = "Karma received at roundend."
+--L.karma_unknown_tooltip = "Unknown karma event."
