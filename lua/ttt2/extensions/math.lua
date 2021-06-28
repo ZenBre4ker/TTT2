@@ -10,9 +10,6 @@ end
 
 local exp = math.exp
 local floor = math.floor
---local AND = bit.band
---local OR = bit.bor
---local XOR = bit.bxor
 
 ---
 -- Equivalent to ExponentialDecay from Source's mathlib.
@@ -72,6 +69,19 @@ end
 -- To output a debugfile to compare it to the original, set DEBUG to true
 local DEBUG = true
 
+--------------------------------
+-- BEGIN INTERNAL SUPPORT STUFF
+--------------------------------
+
+---
+-- bitwise support for pure Lua 5.1
+-- of "32-bit integers"
+-- (as represented by Lua's double-precision floating point number type)
+---
+
+local twoPow16 = math.pow(2, 16)
+local twoPow32 = math.pow(2, 32)
+
 ---
 -- a 32bitUL * 32bitUL = 64bitUL can overflow the 53-bit precision of a double
 -- (thus potentially corrupting the lower 32-bits)
@@ -82,19 +92,21 @@ local DEBUG = true
 -- @param b number a "32-bit integer"
 -- @return number the "32-bit integer" result of multiplication
 local function SAFEMUL32(a,b)
-	local alo = floor(a % 65536)
-	local ahi = floor(a / 65536) % 65536
-	local blo = floor(b % 65536)
-	local bhi = floor(b / 65536) % 65536
+	local alo = floor(a % twoPow16)
+	local ahi = floor(a / twoPow16) % twoPow16
+	local blo = floor(b % twoPow16)
+	local bhi = floor(b / twoPow16) % twoPow16
 	local lolo = alo * blo
 	local lohi = alo * bhi
 	local hilo = ahi * blo
 	local llhh = lohi + hilo
-	return floor((llhh * 65536 + lolo) % 4294967296)
+	return floor((llhh * twoPow16 + lolo) % twoPow32)
 end
 
 ---
 -- 32-bit bitwise and
+-- @note Library bit.band doesnt give the same result as the source
+-- Probably due to the difference of float and integer handling
 -- @param a number a "32-bit integer"
 -- @param b number a "32-bit integer"
 -- @return number the "32-bit integer" result of the bitwise operation
@@ -126,6 +138,8 @@ end
 
 ---
 -- 32-bit bitwise or
+-- @note Library bit.bor doesnt give the same result as the source
+-- Probably due to the difference of float and integer handling
 -- @param a number a "32-bit integer"
 -- @param b number a "32-bit integer"
 -- @return number the "32-bit integer" result of the bitwise operation
@@ -158,6 +172,8 @@ end
 
 ---
 -- 32-bit bitwise xor
+-- @note Library bit.bxor doesnt give the same result as the source
+-- Probably due to the difference of float and integer handling
 -- @param a number a "32-bit integer"
 -- @param b number a "32-bit integer"
 -- @return number the "32-bit integer" result of the bitwise operation
@@ -213,10 +229,10 @@ local mt = {}
 local mti = N + 1
 
 ---
--- @description seed the generator via number
--- @param s number representing a 32-bit integer seed value
-function math.randomseed(s)
-	mt[0] = AND(s, 0xFFFFFFFF)
+-- @desc seed the generator via number
+-- @param seed number representing a 32-bit integer seed value
+function math.randomseed(seed)
+	mt[0] = AND(seed, 0xFFFFFFFF)
 
 	for i = 1, N-1 do
 		-- mt[i] = 1812433253 * XOR(mt[i-1], SHR30(mt[i-1])) + i -- the literal translation, but nope
@@ -227,7 +243,7 @@ function math.randomseed(s)
 	mti = N
 end
 
---- generates a random number on [0,0xffffffff]-interval
+--- generates a random integer number on [0,0xffffffff]-interval
 function math.genrand_int32()
 	local y
 
@@ -267,12 +283,12 @@ end
 
 --- generates a random number on [0,1]-real-interval
 function math.genrand_real1()
-	return math.genrand_int32() * (1.0 / 4294967295.0) -- divided by 2^32-1
+	return math.genrand_int32() * (1.0 / (twoPow32 - 1))
 end
 
 --- generates a random number on [0,1)-real-interval
 function math.genrand_real2()
-	return math.genrand_int32() * (1.0 / 4294967296.0) -- divided by 2^32
+	return math.genrand_int32() * (1.0 / twoPow32)
 end
 
 --- a math library work-alike for generating random numbers
