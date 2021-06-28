@@ -10,6 +10,9 @@ end
 
 local exp = math.exp
 local floor = math.floor
+--local AND = bit.band
+--local OR = bit.bor
+--local XOR = bit.bxor
 
 ---
 -- Equivalent to ExponentialDecay from Source's mathlib.
@@ -65,6 +68,9 @@ end
 	http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html
 	email: m-mat @ math.sci.hiroshima-u.ac.jp (remove space)
 --]]
+
+-- To output a debugfile to compare it to the original, set DEBUG to true
+local DEBUG = true
 
 ---
 -- a 32bitUL * 32bitUL = 64bitUL can overflow the 53-bit precision of a double
@@ -288,3 +294,79 @@ end
 function math.Rand(min, max)
 	return min + math.genrand_real1() *  (max - min)
 end
+
+if not DEBUG then return end
+
+---
+-- @description seed the generator via array
+-- @param init_key array of integer seeds, @note 1-based as per Lua conventions
+-- @param key_length number optional length of array to use (if not provided will be assumed to be #init_key)
+local function init_by_array(init_key, key_length)
+	math.randomseed(19650218);
+
+	if (not key_length) then key_length = #init_key end
+
+	local i, j, k = 1,0,(N > key_length and N) or key_length
+
+	while k > 0 do
+		--mt[i] = XOR(mt[i], XOR(mt[i-1], SHR30(mt[i-1])) * 1664525) + init_key[j+1] + j -- the literal translation, but nope
+		mt[i] = XOR(mt[i], SAFEMUL32(XOR(mt[i-1], SHR30(mt[i-1])), 1664525)) + init_key[j + 1] + j -- yep
+		mt[i] = AND(mt[i], 0xFFFFFFFF)
+		i,j = i + 1, j + 1
+
+		if (i >= N) then
+			mt[0] = mt[N-1]
+			i = 1
+		end
+
+		if j >= key_length then
+			j = 0
+		end
+
+		k = k - 1
+	end
+
+	for l = N - 1, 1, -1 do
+		--mt[i] = XOR(mt[i], XOR(mt[i-1], SHR30(mt[i-1])) * 1566083941) - i -- the literal translation, but nope
+		mt[i] = XOR(mt[i], SAFEMUL32(XOR(mt[i - 1], SHR30(mt[i - 1])), 1566083941)) - i -- yep
+		mt[i] = AND(mt[i], 0xFFFFFFFF)
+		i = i + 1
+
+		if i >= N then
+			mt[0] = mt[N-1]
+			i = 1
+		end
+	end
+
+	mt[0] = 0x80000000
+end
+
+---
+-- this function replicates the test output from the original mt19937ar.c source code
+-- this output may be comp/diff'd against the original to validate the implementation
+-- writes a file named "mt19937ar.lua.out" in the current working directory
+-- reference:
+-- http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/CODES/mt19937ar.out
+local function createValidationOutput()
+	local filename = "mt19937ar.lua.txt"
+	local f = file.Open(filename,"wb","DATA")
+
+	init_by_array({291,564,837,1110})
+	f:Write("1000 outputs of genrand_int32()\n")
+
+	for i = 0, 999 do
+		f:Write(string.format("%10.0f ", math.genrand_int32()))
+		if i % 5 == 4 then f:Write("\n") end
+	end
+
+	f:Write("\n1000 outputs of genrand_real2()\n")
+
+	for i = 0, 999 do
+		f:Write(string.format("%10.8f ", math.genrand_real2()))
+		if i % 5 == 4 then f:Write("\n") end
+	end
+
+	f:Close()
+end
+
+createValidationOutput()
