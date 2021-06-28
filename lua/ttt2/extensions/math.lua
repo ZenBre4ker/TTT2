@@ -312,6 +312,7 @@ function math.Rand(min, max)
 end
 
 if not DEBUG then return end
+print("\nStart Debug of Math Library Test")
 
 ---
 -- @description seed the generator via array
@@ -386,3 +387,50 @@ local function createValidationOutput()
 end
 
 createValidationOutput()
+
+-- Henks Randomseed test
+print("Start Henks Test")
+
+-- TTT2 seeds with an OS timestamp, hardcode one for repeatability
+base = 1592735917
+-- We are interested in the first few results after a seed round
+samples_per_seed = 1000
+-- Test for a lot of consecutive seeds
+seeds = 10000
+-- If you want, you can skip over a constant amount of seeds, but this does not matter
+seedskip = 1
+
+output = {}
+
+for i = 1, samples_per_seed do
+	output[i] = {}
+end
+
+-- Generate i sequences of the first j samples after seeding
+for i = 1, seeds do
+	math.randomseed(base + seedskip * i)
+	for j = 1, samples_per_seed do
+		output[j][i] = math.random(0,255)
+	end
+end
+
+file.CreateDir("randomTest")
+
+-- Store the jth sample of each seed in its own file
+for j = 1, samples_per_seed do
+	local handle = file.Open("randomTest/rand" .. j .. ".txt", "wb", "DATA")
+	for i = 1, seeds do
+		handle:Write(string.char(output[j][i]))
+	end
+	handle:Close()
+end
+
+-- Sanity check: take a lot of samples without reseeding
+local mhandle = file.Open("randomTest/megarand.txt", "wb", "DATA")
+math.randomseed(base)
+for i = 1, seeds * samples_per_seed do
+	mhandle:Write(string.char(math.random(0,255)))
+end
+mhandle:Close()
+
+print("END Debug of Math Library Test\n")
